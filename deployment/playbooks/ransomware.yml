@@ -1,0 +1,29 @@
+name: "Ransomware Containment Playbook"
+trigger:
+  event_type: "ransomware"
+  severity: "CRITICAL"
+severity: "CRITICAL"
+actions:
+  - name: "Isolate Endpoint on SDN"
+    action_type: "SDN_SLICE_ISOLATE"
+    params:
+      mac_address: "${event.mac_address}"
+    timeout: 10
+  - name: "Snapshot Infected VM"
+    action_type: "VM_SNAPSHOT"
+    params:
+      vm_id: "${event.vm_id}"
+    timeout: 30
+  - name: "Block CNC IPs on Perimeter Firewall"
+    action_type: "FIREWALL_RULE"
+    params:
+      destination: "${event.cnc_ip}"
+      port: 443
+    timeout: 15
+    rollback_action: "Remove DROP Rule"
+  - name: "Notify Security Team via Slack"
+    action_type: "SLACK_NOTIFICATION"
+    params:
+      channel: "#soc-containment"
+      message: "ALERT: Autonomous ransomware containment executed for host ${event.host_ip}."
+    timeout: 5

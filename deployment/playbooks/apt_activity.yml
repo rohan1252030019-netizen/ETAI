@@ -1,0 +1,33 @@
+name: "APT Lateral Movement Mitigation Playbook"
+trigger:
+  event_type: "apt_activity"
+  severity: "HIGH"
+severity: "HIGH"
+actions:
+  - name: "Revoke Endpoint Session Tokens"
+    action_type: "IDENTITY_API"
+    params:
+      token_hash: "${event.session_id}"
+    timeout: 10
+  - name: "Isolate Targeted Domain Controller Host"
+    action_type: "SDN_SLICE_ISOLATE"
+    params:
+      mac_address: "${event.mac_address}"
+    timeout: 10
+  - name: "Snapshot Targeted DC Server"
+    action_type: "VM_SNAPSHOT"
+    params:
+      vm_id: "${event.vm_id}"
+    timeout: 30
+  - name: "Deploy EDR Hunting Command"
+    action_type: "ENDPOINT_SHELL"
+    params:
+      host_ip: "${event.host_ip}"
+      command: "powershell -ExecutionPolicy Bypass -Command 'Get-Process | Where-Object {$_.Path -like \"*temp*\"}'"
+    timeout: 30
+  - name: "Notify APT Incident Team"
+    action_type: "SLACK_NOTIFICATION"
+    params:
+      channel: "#incident-apt"
+      message: "CRITICAL: Threat actor lateral movement suspected targeting host ${event.host_ip}. Automated containment initiated."
+    timeout: 5

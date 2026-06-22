@@ -1,0 +1,29 @@
+name: "OT SCADA Tamper Response Playbook"
+trigger:
+  event_type: "scada_tamper"
+  severity: "CRITICAL"
+severity: "CRITICAL"
+actions:
+  - name: "Isolate HMI/SCADA Server from IT Core Network"
+    action_type: "SDN_SLICE_ISOLATE"
+    params:
+      mac_address: "${event.mac_address}"
+    timeout: 10
+  - name: "Transmit PLC Modbus Safety Coil Signal"
+    action_type: "MODBUS_COMMAND"
+    params:
+      plc_ip: "${event.plc_ip}"
+      coil: 100
+      value: 1
+    timeout: 10
+  - name: "Revoke SCADA Portal Session Tokens"
+    action_type: "IDENTITY_API"
+    params:
+      token_hash: "${event.session_hash}"
+    timeout: 10
+  - name: "Notify CNI Cyber Response Team"
+    action_type: "SLACK_NOTIFICATION"
+    params:
+      channel: "#cni-containment"
+      message: "CRITICAL: SCADA tampering detected on PLC ${event.plc_ip}. Initiated autonomous safety isolation play."
+    timeout: 5

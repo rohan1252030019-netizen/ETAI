@@ -1,0 +1,34 @@
+name: "Insider Data Exfiltration Mitigation Playbook"
+trigger:
+  event_type: "insider_threat"
+  severity: "HIGH"
+severity: "HIGH"
+actions:
+  - name: "Revoke User Authentication Token"
+    action_type: "IDENTITY_API"
+    params:
+      token_hash: "${event.token_hash}"
+    timeout: 10
+  - name: "Block Exfiltration Destination IP"
+    action_type: "FIREWALL_RULE"
+    params:
+      destination: "${event.destination_ip}"
+      port: 443
+    timeout: 15
+  - name: "Disable User AD Account"
+    action_type: "AD_COMMAND"
+    params:
+      username: "${event.username}"
+    timeout: 10
+  - name: "Kill Upload Processes on Source Host"
+    action_type: "ENDPOINT_SHELL"
+    params:
+      host_ip: "${event.host_ip}"
+      command: "kill -9 ${event.process_id}"
+    timeout: 15
+  - name: "Notify Data Loss Prevention Team"
+    action_type: "SLACK_NOTIFICATION"
+    params:
+      channel: "#dlp-alerts"
+      message: "WARNING: Insider data exfiltration attempt blocked for user '${event.username}'. Host isolated."
+    timeout: 5
